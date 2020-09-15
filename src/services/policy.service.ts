@@ -7,11 +7,12 @@ import { Client } from 'src/models/Client';
 import { Insurable } from 'src/models/Insurable';
 import { InsurableRepository } from 'src/repositories/InsurableRepository';
 import { PolicyRequest, EndorsePolicyRequest, PayPolicyRequest, CancelPolicyRequest } from 'src/rest/PolicyRequest';
+import { ValidationHelper } from 'src/helpers/validation.helper';
 
 @Injectable()
 export class PolicyService {
 
-  constructor(private policyRepository: PolicyRepository, private clientRepository: ClientRepository, private insurableRepository: InsurableRepository) {}
+  constructor(private validationHelper:ValidationHelper, private policyRepository: PolicyRepository, private clientRepository: ClientRepository, private insurableRepository: InsurableRepository) {}
 
   /**
    * TODO Add filters as needed.
@@ -38,6 +39,11 @@ export class PolicyService {
       req.startDate = now;
     } 
     const policy = await this.getPolicy(policyId); 
+
+    const error = this.validationHelper.validatePayPolicy(policy);
+    if(error) {
+      throw new Error(error);
+    }
     
     policy.issuedDate = now;
     policy.startDate = req.startDate;
@@ -56,6 +62,11 @@ export class PolicyService {
     }
     const policy = await this.getPolicy(policyId); 
 
+    const error = this.validationHelper.validateCancelation(policy);
+    if(error) {
+      throw new Error(error);
+    }
+
     policy.endDate = req.endDate;
     policy.status = PolicyStatus.Cancelled;
     
@@ -68,21 +79,9 @@ export class PolicyService {
 
   
   async createPolicy(clientId:number, req:PolicyRequest ): Promise<Policy> {
-    console.info('- createPolicy ', req);
-
-    const client:Client = await this.clientRepository.findOne(clientId);
-    
-    if(!client) {
-      throw new Error(`ClientId ${clientId} was not found`); 
-    }
-
-    if(!req.insurableId) {
-      throw new Error(`No Insurable was not found`); 
-    }
-
-    const insurable:Insurable = await this.insurableRepository.findOne(req.insurableId, { relations: ["policies"]});
-    if(!insurable) {
-      throw new Error(`Insurable is not valid`);
+    const error = await this.validationHelper.validateCreatePolicy(clientId, req);
+    if(error) {
+      throw new Error(error);
     }
 
     const policy = new Policy();
@@ -97,6 +96,7 @@ export class PolicyService {
     
     const result:Policy = await this.policyRepository.save(policy);
 
+    const insurable:Insurable = await this.insurableRepository.findOne(req.insurableId, { relations: ["policies"]});
     insurable.policies.push(policy);
     await this.insurableRepository.save(insurable);
 

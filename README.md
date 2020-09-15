@@ -35,3 +35,13 @@ $ npm run test:cov
 ```
 
 
+## Running App with Docker
+
+```bash
+# start up
+$ ./startup.sh
+
+# stop 
+$ ./shutdown.sh
+
+```

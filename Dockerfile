@@ -14,4 +14,4 @@ RUN apk add --no-cache bash
 WORKDIR /app
 COPY --from=builder /app ./
 EXPOSE 3000
-CMD ["yarn", "run", "start:prod"]
+CMD ["npm", "run", "start:prod"]

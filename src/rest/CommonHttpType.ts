@@ -6,3 +6,13 @@ export class BaseResponse {
   message = 'OK';
   errors: string[];
 }
+
+export class ClientErrorResponse extends BaseResponse {
+
+  constructor () {
+    super();
+    this.httpCode = 403;
+    this.message = 'Client Error'
+  }
+
+}
